@@ -1,0 +1,417 @@
+
+
+@import "tailwindcss";
+
+/* Professional CSS Variables */
+:root {
+  /* Professional color palette */
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #dbeafe;
+  --secondary: #64748b;
+  --accent: #f1f5f9;
+  --surface: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.85);
+  --border: rgba(226, 232, 240, 0.5);
+  --shadow: rgba(15, 23, 42, 0.08);
+  --shadow-strong: rgba(15, 23, 42, 0.12);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+}
+
+/* Professional base styling */
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  
+  /* Ultra-professional corporate gradient */
+  background: 
+    /* Minimal corporate accent points */
+    radial-gradient(ellipse 120% 200% at 5% 0%, rgba(71, 85, 105, 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse 150% 180% at 95% 100%, rgba(100, 116, 139, 0.04) 0%, transparent 35%),
+    
+    /* Executive-grade subtle gradient */
+    linear-gradient(180deg,
+      #fafbfc 0%,
+      #f8fafc 15%,
+      #f1f5f9 35%,
+      #f8fafc 65%,
+      #fafbfc 85%,
+      #ffffff 100%
+    );
+  
+  background-attachment: fixed;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+#root {
+  height: 100vh;
+  position: relative;
+  
+  /* Corporate overlay for premium feel */
+  background:
+    /* Subtle geometric pattern overlay */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      rgba(248, 250, 252, 0.3) 1px,
+      transparent 2px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      rgba(248, 250, 252, 0.2) 1px,
+      transparent 2px,
+      transparent 40px
+    ),
+    
+    /* Professional frosted glass effect */
+    linear-gradient(160deg,
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(248, 250, 252, 0.4) 25%,
+      rgba(241, 245, 249, 0.3) 50%,
+      rgba(248, 250, 252, 0.4) 75%,
+      rgba(255, 255, 255, 0.5) 100%
+    );
+  
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+  background-repeat: repeat, repeat, no-repeat;
+}
+
+/* Professional glassmorphism utilities */
+.glass-panel {
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px var(--shadow);
+}
+
+.glass-panel-strong {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(226, 232, 240, 0.3);
+  box-shadow: 
+    0 20px 40px rgba(15, 23, 42, 0.05),
+    0 8px 16px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Professional elevation system */
+.elevation-1 {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+.elevation-2 {
+  box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05), 0 2px 4px rgba(15, 23, 42, 0.08);
+}
+
+.elevation-3 {
+  box-shadow: 0 10px 15px rgba(15, 23, 42, 0.08), 0 4px 6px rgba(15, 23, 42, 0.05);
+}
+
+.elevation-4 {
+  box-shadow: 0 20px 25px rgba(15, 23, 42, 0.08), 0 10px 10px rgba(15, 23, 42, 0.04);
+}
+
+/* Professional animation presets */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Professional component animations */
+.animate-slide-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideInDown 0.3s ease-out;
+}
+
+.animate-fade-scale {
+  animation: fadeInScale 0.2s ease-out;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Professional scrollbar styling */
+.professional-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.professional-scrollbar::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.3);
+  border-radius: 3px;
+}
+
+.professional-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.professional-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Professional focus styles */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  border-color: var(--primary);
+}
+
+.focus-ring-inset:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Professional hover effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.1);
+}
+
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Professional loading states */
+.loading-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 245, 249, 0.8) 0%,
+    rgba(248, 250, 252, 0.9) 50%,
+    rgba(241, 245, 249, 0.8) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Professional text selection */
+::selection {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--text-primary);
+}
+
+::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--text-primary);
+}
+
+/* Professional form elements */
+.professional-input {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.professional-input:focus {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+  outline: none;
+}
+
+.professional-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Professional button base */
+.professional-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  user-select: none;
+}
+
+.professional-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Professional surface patterns */
+.surface-pattern {
+  position: relative;
+}
+
+.surface-pattern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.03) 1px, transparent 0);
+  background-size: 20px 20px;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Professional responsive utilities */
+@media (max-width: 768px) {
+  body {
+    background-attachment: local;
+  }
+  
+  .glass-panel {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  
+  .glass-panel-strong {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+}
+
+/* Professional dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: #1e293b;
+    --secondary: #94a3b8;
+    --accent: #1e293b;
+    --surface: #0f172a;
+    --surface-glass: rgba(15, 23, 42, 0.85);
+    --border: rgba(71, 85, 105, 0.3);
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-strong: rgba(0, 0, 0, 0.5);
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+  }
+  
+  body {
+    /* Corporate dark theme gradient */
+    background: 
+      /* Minimal dark accent points */
+      radial-gradient(ellipse 120% 200% at 5% 0%, rgba(30, 41, 59, 0.4) 0%, transparent 40%),
+      radial-gradient(ellipse 150% 180% at 95% 100%, rgba(51, 65, 85, 0.3) 0%, transparent 35%),
+      
+      /* Executive dark gradient */
+      linear-gradient(180deg,
+        #0f172a 0%,
+        #1e293b 15%,
+        #334155 35%,
+        #1e293b 65%,
+        #0f172a 85%,
+        #020617 100%
+      );
+  }
+  
+  #root {
+    /* Corporate dark overlay */
+    background:
+      /* Dark geometric pattern */
+      repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        rgba(30, 41, 59, 0.2) 1px,
+        transparent 2px,
+        transparent 40px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        rgba(30, 41, 59, 0.15) 1px,
+        transparent 2px,
+        transparent 40px
+      ),
+      
+      /* Professional dark frosted glass */
+      linear-gradient(160deg,
+        rgba(15, 23, 42, 0.7) 0%,
+        rgba(30, 41, 59, 0.5) 25%,
+        rgba(51, 65, 85, 0.4) 50%,
+        rgba(30, 41, 59, 0.5) 75%,
+        rgba(15, 23, 42, 0.6) 100%
+      );
+  }
+}
