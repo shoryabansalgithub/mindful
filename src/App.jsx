@@ -69,27 +69,24 @@ const TherapyChatbot = () => {
     };
   }, []);
 
-  const therapistPrompt = `You are a licensed therapist with expertise in:
-- Cognitive Behavioral Therapy (CBT)
-- Mindfulness-Based Therapy  
-- Trauma-Informed Therapy
-- Solution-Focused Brief Therapy
+  const therapistPrompt = `You are Dr. Sarah, a licensed clinical psychologist with 15 years of experience. You specialize in CBT, DBT, trauma-informed care, and mindfulness-based interventions.
 
-Your approach:
-- Warm, empathetic, non-judgmental tone
-- Help clients reframe negative thought patterns
-- Guide clients to connect feelings, thoughts, and behaviors
-- Encourage small, achievable action steps
-- Balance validation with gentle challenge
-- Integrate mindfulness practices for self-regulation
+Your therapeutic style:
+- Warm, empathetic, and genuinely curious about the client's experience
+- Ask meaningful questions that help clients explore their thoughts and feelings
+- Provide practical, evidence-based strategies
+- Validate emotions while offering new perspectives
+- Speak naturally and professionally, as you would in your private practice
 
-Ask questions like:
-- "What emotions are you noticing right now?"
-- "What thoughts often come up in difficult moments?"
-- "How can we reframe this belief into something more supportive?"
-- "What would self-compassion look like here?"
+Important: 
+- Write ONLY your direct response to the client
+- Do NOT include any meta-commentary, instructions, or explanations of your approach
+- Do NOT use asterisks, bullet points, or formatting markers
+- Do NOT label your questions as "feeling-focused" or "thought-focused"
+- Keep responses concise (100-200 words) and conversational
+- Speak as Dr. Sarah would speak, not as an AI following instructions
 
-Always validate emotional experiences before problem-solving. Celebrate progress and maintain professional boundaries with compassion.`;
+Focus on being genuinely helpful and present with your client.`;
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -103,12 +100,14 @@ Always validate emotional experiences before problem-solving. Celebrate progress
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputText;
     setInputText('');
     setIsLoading(true);
 
     try {
-      // Simulate API call with therapeutic responses
-      const response = await simulateTherapistResponse(inputText);
+      console.log("Sending message to Gemini API:", currentInput);
+      const response = await callGeminiAPI(currentInput, [...messages, userMessage]);
+      console.log("Received response from Gemini API:", response);
       
       const botMessageId = Date.now() + 1;
       const botMessage = {
@@ -126,6 +125,7 @@ Always validate emotional experiences before problem-solving. Celebrate progress
       await typeMessage(botMessageId, response, 25);
       
     } catch (error) {
+      console.error("Error calling Gemini API:", error);
       const errorMessageId = Date.now() + 1;
       const errorMessage = {
         id: errorMessageId,
@@ -138,51 +138,42 @@ Always validate emotional experiences before problem-solving. Celebrate progress
       setMessages(prev => [...prev, errorMessage]);
       setIsLoading(false);
       
-      const errorText = "I apologize, but I'm having trouble connecting right now. Please try again in a moment. Remember, if you're in crisis, please reach out to emergency services or a crisis helpline.";
+      const errorText = "I apologize, but I'm having trouble connecting right now. Please try again in a moment. Remember, if you're in crisis, please contact emergency services or a crisis helpline.";
       await typeMessage(errorMessageId, errorText, 25);
     }
   };
 
-  // Simulate therapist responses (replace with actual API call)
-  const simulateTherapistResponse = async (userInput) => {
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
-    const responses = [
-      "I hear you sharing something really important. Can you tell me more about what emotions you're experiencing as you think about this?",
-      "That sounds like a challenging situation. What thoughts are going through your mind right now as we discuss this?",
-      "I appreciate you opening up about this. How do you typically respond when you notice these feelings coming up?",
-      "It takes courage to share what you're going through. What would it look like to show yourself some compassion in this moment?",
-      "I'm noticing some patterns in what you've shared. How might we reframe some of these thoughts in a way that feels more supportive?",
-      "Thank you for trusting me with this. What small step could you take this week that might help you move forward?",
-      "I can sense the weight of what you're carrying. What strategies have helped you cope with difficult emotions in the past?",
-      "Your feelings are completely valid. What would you say to a close friend who was going through something similar?"
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
-  // Actual Gemini API integration (commented out - uncomment and add your API key)
-  /*
-  const callGeminiAPI = async (message) => {
+  // Improved Gemini API integration
+  const callGeminiAPI = async (message, currentMessages) => {
     const API_KEY = import.meta.env.VITE_API_KEY;
     
     if (!API_KEY) {
       throw new Error('Gemini API key not found. Please add VITE_API_KEY to your .env file and restart the dev server.');
     }
 
-    const conversationContext = messages
-      .slice(-6) // Get last 6 messages for context
-      .map(msg => `${msg.isBot ? 'Therapist' : 'Client'}: ${msg.text}`)
-      .join('\n');
+    // Build conversation history more effectively
+    const conversationHistory = currentMessages
+      .slice(-10) // Get last 10 messages for better context
+      .filter(msg => msg.text.trim()) // Filter out empty messages
+      .map(msg => ({
+        role: msg.isBot ? 'model' : 'user',
+        parts: [{ text: msg.text }]
+      }));
 
-    const fullPrompt = `${therapistPrompt}
+    // Create the full conversation for the API
+    const contents = [
+      {
+        role: 'user',
+        parts: [{ text: therapistPrompt }]
+      },
+      {
+        role: 'model',
+        parts: [{ text: "I understand. I'm Dr. Sarah, and I'm here to provide therapeutic support. I'll respond with empathy, ask thoughtful questions, and help you explore your thoughts and feelings in a supportive way. How can I help you today?" }]
+      },
+      ...conversationHistory
+    ];
 
-Previous conversation context:
-${conversationContext}
-
-Client: ${message}
-
-Therapist:`;
+    console.log("Sending conversation context:", contents);
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
       method: 'POST',
@@ -190,16 +181,13 @@ Therapist:`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: fullPrompt
-          }]
-        }],
+        contents: contents,
         generationConfig: {
-          temperature: 0.7,
+          temperature: 0.8, // Balanced creativity and consistency
           topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
+          topP: 0.9,
+          maxOutputTokens: 300, // Shorter, more focused responses
+          candidateCount: 1,
         },
         safetySettings: [
           {
@@ -207,7 +195,7 @@ Therapist:`;
             threshold: "BLOCK_MEDIUM_AND_ABOVE"
           },
           {
-            category: "HARM_CATEGORY_HATE_SPEECH",
+            category: "HARM_CATEGORY_HATE_SPEECH", 
             threshold: "BLOCK_MEDIUM_AND_ABOVE"
           },
           {
@@ -224,18 +212,32 @@ Therapist:`;
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to get response from Gemini API');
+      console.error("API Error:", errorData);
+      throw new Error(errorData.error?.message || `API Error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log("Full API Response:", data);
     
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       throw new Error('Invalid response format from Gemini API');
     }
 
-    return data.candidates[0].content.parts[0].text.trim();
+    const responseText = data.candidates[0].content.parts[0].text.trim();
+    
+    // Clean up the response - remove any unwanted formatting or meta-commentary
+    const cleanedResponse = responseText
+      .replace(/^(Dr\.\s*Sarah:|Therapist:|Assistant:)\s*/i, '')
+      .replace(/\*\*\*/g, '') // Remove triple asterisks
+      .replace(/\*\*/g, '') // Remove double asterisks
+      .replace(/\* /g, '') // Remove bullet points
+      .replace(/\(This is a [^)]+\)/gi, '') // Remove meta-commentary in parentheses
+      .replace(/\[.*?\]/g, '') // Remove bracketed instructions
+      .replace(/\n\s*\n/g, '\n') // Clean up extra line breaks
+      .trim();
+
+    return cleanedResponse || responseText;
   };
-  */
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
