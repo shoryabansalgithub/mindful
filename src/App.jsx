@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, Brain, Sparkles, Settings, User, Menu, X } from 'lucide-react';
-import APITest from './components/APITest.jsx';
 
 const TherapyChatbot = () => {
   const [messages, setMessages] = useState([
@@ -148,9 +147,6 @@ Focus on being genuinely helpful and present with your client.`;
   const callGeminiAPI = async (message, currentMessages) => {
     const API_KEY = import.meta.env.VITE_API_KEY;
     
-    console.log("API Key:", API_KEY ? "Loaded" : "Not found");
-    console.log("API Key value (first 10 chars):", API_KEY ? API_KEY.substring(0, 10) : "N/A");
-    
     if (!API_KEY) {
       throw new Error('Gemini API key not found. Please add VITE_API_KEY to your .env file and restart the dev server.');
     }
@@ -179,60 +175,45 @@ Focus on being genuinely helpful and present with your client.`;
 
     console.log("Sending conversation context:", contents);
 
-    const requestBody = {
-      contents: contents,
-      generationConfig: {
-        temperature: 0.8, // Balanced creativity and consistency
-        topK: 40,
-        topP: 0.9,
-        maxOutputTokens: 300, // Shorter, more focused responses
-        candidateCount: 1,
-      },
-      safetySettings: [
-        {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        },
-        {
-          category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        },
-        {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        },
-        {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        }
-      ]
-    };
-    
-    console.log("Request body:", JSON.stringify(requestBody, null, 2));
-
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({
+        contents: contents,
+        generationConfig: {
+          temperature: 0.8, // Balanced creativity and consistency
+          topK: 40,
+          topP: 0.9,
+          maxOutputTokens: 300, // Shorter, more focused responses
+          candidateCount: 1,
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH", 
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          }
+        ]
+      })
     });
-    
-    console.log("Response status:", response.status);
-    console.log("Response ok:", response.ok);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API Error Status:", response.status);
-      console.error("API Error Text:", errorText);
-      try {
-        const errorData = JSON.parse(errorText);
-        console.error("API Error Data:", errorData);
-        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
-      } catch (parseError) {
-        console.error("Error parsing API error response:", parseError);
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
+      const errorData = await response.json();
+      console.error("API Error:", errorData);
+      throw new Error(errorData.error?.message || `API Error: ${response.status}`);
     }
 
     const data = await response.json();
