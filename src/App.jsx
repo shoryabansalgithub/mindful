@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MessageCircle, Brain, Sparkles, Settings, User } from 'lucide-react';
+import { Send, MessageCircle, Brain, Sparkles, Settings, User, Menu, X } from 'lucide-react';
 
 const TherapyChatbot = () => {
   const [messages, setMessages] = useState([
@@ -17,6 +17,7 @@ const TherapyChatbot = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [typingMessageId, setTypingMessageId] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -256,16 +257,46 @@ Therapist:`;
       `}</style>
       
       <div className={`min-h-screen transition-all duration-300 ${isDarkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'}`}>
+        {/* Mobile menu button */}
+        <div className="lg:hidden fixed top-4 left-4 z-50">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className={`p-2 rounded-lg backdrop-blur-md transition-all duration-300 ${
+              isDarkMode
+                ? 'bg-gray-800/70 text-gray-200 hover:bg-gray-700/70'
+                : 'bg-white/70 text-gray-700 hover:bg-gray-100/70'
+            }`}
+          >
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* Mobile sidebar backdrop */}
+        {isSidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-30 backdrop-blur-sm"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <aside className={`fixed top-0 left-0 bottom-0 z-50 border-r backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-gray-900/70 border-gray-800' : 'bg-white/70 border-gray-200'} w-56`}>
-          <div className="h-full flex flex-col p-3">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-                  <Brain className={`w-5 h-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+        <aside className={`fixed top-0 left-0 bottom-0 z-40 border-r backdrop-blur-md transition-all duration-300 lg:translate-x-0 ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${isDarkMode ? 'bg-gray-900/70 border-gray-800' : 'bg-white/70 border-gray-200'} w-64 lg:w-56`}>
+          <div className="h-full flex flex-col p-4">
+            <div className="flex items-center justify-between mb-6 mt-2">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                  <Brain className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                 </div>
-                <span className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>MindfulAI</span>
+                <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>MindfulAI</span>
               </div>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="lg:hidden text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
             </div>
 
             <nav className="space-y-2">
@@ -423,7 +454,7 @@ Therapist:`;
         </aside>
 
         {/* Content wrapper */}
-        <div style={{ marginLeft: '14rem' }}>
+        <div className="lg:ml-56 pt-16 lg:pt-0">
           {/* Chat Container */}
           <main className="max-w-4xl mx-auto px-4 pb-32">
             <div className="py-6">
@@ -513,7 +544,7 @@ Therapist:`;
           </main>
 
           {/* Input Area */}
-          <div className="fixed bottom-0 right-0 z-40" style={{ left: '14rem' }}>
+          <div className="fixed bottom-0 right-0 z-40 left-0 lg:left-56">
             <div className={`backdrop-blur-md border-t transition-all duration-300 ${
               isDarkMode ? 'bg-gray-900/80 border-gray-700' : 'bg-white/80 border-gray-200'
             }`}>
