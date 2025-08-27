@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Access your API key as an environment variable
-const API_KEY = import.meta.env.VITE_API_KEY;
+const API_KEY = import.meta.env.REACT_APP_GEMINI_API_KEY || import.meta.env.VITE_API_KEY;
 
 // Check if API key is provided
 if (!API_KEY) {

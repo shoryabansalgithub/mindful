@@ -18,6 +18,7 @@ const TherapyChatbot = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [typingMessageId, setTypingMessageId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [errorBanner, setErrorBanner] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -29,6 +30,14 @@ const TherapyChatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Preflight: surface missing API key early (esp. in production)
+  useEffect(() => {
+  const hasKey = !!(import.meta.env.REACT_APP_GEMINI_API_KEY || import.meta.env.VITE_API_KEY);
+    if (!hasKey) {
+      setErrorBanner('Missing API key. Set REACT_APP_GEMINI_API_KEY (or VITE_API_KEY) and rebuild.');
+    }
+  }, []);
 
   // Typing animation effect
   const typeMessage = (messageId, fullText, delay = 30) => {
@@ -126,6 +135,7 @@ Focus on being genuinely helpful and present with your client.`;
       
     } catch (error) {
       console.error("Error calling Gemini API:", error);
+      setErrorBanner(error?.message || 'The service is temporarily unavailable.');
       const errorMessageId = Date.now() + 1;
       const errorMessage = {
         id: errorMessageId,
@@ -135,7 +145,14 @@ Focus on being genuinely helpful and present with your client.`;
         isTyping: false
       };
       
-      setMessages(prev => [...prev, errorMessage]);
+      // prevent duplicate fallback stacking
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last && last.isBot && last.text.includes("I'm having trouble connecting")) {
+          return prev; // avoid repeating the same error message
+        }
+        return [...prev, errorMessage];
+      });
       setIsLoading(false);
       
       const errorText = "I apologize, but I'm having trouble connecting right now. Please try again in a moment. Remember, if you're in crisis, please contact emergency services or a crisis helpline.";
@@ -145,7 +162,7 @@ Focus on being genuinely helpful and present with your client.`;
 
   // Improved Gemini API integration
   const callGeminiAPI = async (message, currentMessages) => {
-    const API_KEY = import.meta.env.VITE_API_KEY;
+  const API_KEY = import.meta.env.REACT_APP_GEMINI_API_KEY || import.meta.env.VITE_API_KEY;
     
     if (!API_KEY) {
       throw new Error('Gemini API key not found. Please add VITE_API_KEY to your .env file and restart the dev server.');
@@ -175,40 +192,83 @@ Focus on being genuinely helpful and present with your client.`;
 
     console.log("Sending conversation context:", contents);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    // helper: fetch with timeout
+    const fetchWithTimeout = (url, options, timeoutMs = 15000) => {
+      return new Promise((resolve, reject) => {
+        const id = setTimeout(() => reject(new Error('Request timed out')), timeoutMs);
+        fetch(url, options).then(
+          (res) => { clearTimeout(id); resolve(res); },
+          (err) => { clearTimeout(id); reject(err); }
+        );
+      });
+    };
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const payload = {
+      contents: contents,
+      generationConfig: {
+        temperature: 0.7, // slightly lower to reduce repetitive/unstable replies
+        topK: 40,
+        topP: 0.9,
+        maxOutputTokens: 300,
+        candidateCount: 1,
       },
-      body: JSON.stringify({
-        contents: contents,
-        generationConfig: {
-          temperature: 0.8, // Balanced creativity and consistency
-          topK: 40,
-          topP: 0.9,
-          maxOutputTokens: 300, // Shorter, more focused responses
-          candidateCount: 1,
-        },
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH", 
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+      ]
+    };
+
+    // retry logic with backoff for transient failures
+    const maxAttempts = 2;
+    let lastErr;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const response = await fetchWithTimeout(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }, 15000);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("API Error:", errorData);
+          // do not retry on 4xx auth/config errors
+          if (response.status >= 400 && response.status < 500) {
+            throw new Error(errorData.error?.message || `API Error: ${response.status}`);
           }
-        ]
-      })
-    });
+          throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Full API Response:", data);
+
+        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+          throw new Error('Invalid response format from Gemini API');
+        }
+
+        const responseText = data.candidates[0].content.parts[0].text.trim();
+        const cleanedResponse = responseText
+          .replace(/^(Dr\.\s*Sarah:|Therapist:|Assistant:)\s*/i, '')
+          .replace(/\*\*\*/g, '')
+          .replace(/\*\*/g, '')
+          .replace(/\* /g, '')
+          .replace(/\(This is a [^\)]+\)/gi, '')
+          .replace(/\[.*?\]/g, '')
+          .replace(/\n\s*\n/g, '\n')
+          .trim();
+
+        return cleanedResponse || responseText;
+      } catch (err) {
+        lastErr = err;
+        const isLast = attempt === maxAttempts;
+        if (isLast) break;
+        await new Promise(r => setTimeout(r, 500 * attempt)); // backoff
+      }
+    }
+    throw lastErr || new Error('Unknown error');
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -257,6 +317,14 @@ Focus on being genuinely helpful and present with your client.`;
           animation: blink 1s infinite;
         }
       `}</style>
+      {errorBanner && (
+        <div className="fixed top-0 left-0 right-0 z-[100]">
+          <div className="mx-auto max-w-4xl px-4 py-2 mt-2 rounded-xl shadow-sm border bg-red-50 text-red-700 border-red-200 flex items-center justify-between">
+            <span className="text-sm">{errorBanner}</span>
+            <button className="text-xs underline" onClick={() => setErrorBanner(null)}>Dismiss</button>
+          </div>
+        </div>
+      )}
       
       <div className={`min-h-screen transition-all duration-300 ${isDarkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'}`}>
         {/* Mobile menu button */}
@@ -282,7 +350,7 @@ Focus on being genuinely helpful and present with your client.`;
         )}
 
         {/* Sidebar */}
-        <aside className={`fixed top-0 left-0 bottom-0 z-40 border-r backdrop-blur-md transition-all duration-300 lg:translate-x-0 ${
+  <aside className={`fixed top-0 left-0 bottom-0 z-40 border-r backdrop-blur-md transition-all duration-300 lg:translate-x-0 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isDarkMode ? 'bg-gray-900/70 border-gray-800' : 'bg-white/70 border-gray-200'} w-64 lg:w-56`}>
           <div className="h-full flex flex-col p-4">
@@ -291,7 +359,7 @@ Focus on being genuinely helpful and present with your client.`;
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
                   <Brain className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                 </div>
-                <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>MindfulAI</span>
+    <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} font-heading tracking-tight`}>MindfulAI</span>
               </div>
               <button
                 onClick={() => setIsSidebarOpen(false)}
@@ -487,7 +555,7 @@ Focus on being genuinely helpful and present with your client.`;
                           ? 'bg-blue-600 text-white rounded-tr-md'
                           : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-tr-md'
                     }`}>
-                      <p className="text-sm leading-relaxed">
+                      <p className="text-sm leading-snug tracking-tight">
                         {message.text}
                         {message.isTyping && (
                           <span className={`inline-block w-2 h-4 ml-1 typing-cursor ${
@@ -506,7 +574,7 @@ Focus on being genuinely helpful and present with your client.`;
                     
                     <p className={`text-xs mt-1 px-2 ${
                       isDarkMode ? 'text-gray-500' : 'text-gray-500'
-                    } ${message.isBot ? 'text-left' : 'text-right'}`}>
+                    } ${message.isBot ? 'text-left' : 'text-right'} tracking-tight`}>
                       {message.timestamp}
                     </p>
                   </div>
@@ -598,7 +666,7 @@ Focus on being genuinely helpful and present with your client.`;
               <div className={`max-w-md w-full mx-4 p-6 rounded-2xl shadow-xl ${
                 isDarkMode ? 'bg-gray-800' : 'bg-white'
               }`}>
-                <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'} font-heading tracking-tight`}>
                   Settings
                 </h3>
                 <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
